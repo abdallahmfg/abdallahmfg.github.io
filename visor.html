@@ -2,10 +2,64 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visor de Proyectos</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+        }
+
+        .proyecto {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+
+        .proyecto h2 {
+            margin-top: 0;
+        }
+
+        a {
+            display: inline-block;
+            margin-right: 15px;
+            text-decoration: none;
+            color: #0366d6;
+            font-weight: bold;
+        }
+    </style>
 </head>
+
 <body>
+
     <h1>Visor de Proyectos</h1>
-    <p>Aquí se mostrarán los proyectos realizados.</p>
+
+    <div class="proyecto">
+        <h2>Proyecto 1 - API REST con Flask</h2>
+
+        <p>
+            Primer proyecto realizado con Python y Flask.
+        </p>
+
+        <a href="proyecto1/application.py">
+            Ver application.py
+        </a>
+
+        <a href="proyecto1/requirements.txt">
+            Ver requirements.txt
+        </a>
+
+        <a href="proyecto1/README.md">
+            Ver README
+        </a>
+    </div>
+
 </body>
 </html>
