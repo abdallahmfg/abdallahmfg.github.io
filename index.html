@@ -740,7 +740,7 @@
           <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin allow-modals allow-forms"></iframe>
           <div class="preview-console" id="preview-console">
             <div class="console-header">
-              <span>Consola de Ejecución JS</span>
+              <span>Consola de Ejecución</span>
               <span id="btn-clear-console" style="cursor:pointer; text-decoration:underline;">Limpiar</span>
             </div>
             <div id="console-logs"></div>
@@ -797,8 +797,8 @@
 
 <script>
   const state = {
-    owner: "escomz",
-    repo: "escomz.github.io",
+    owner: "abdallahmfg",
+    repo: "abdallahmfg.github.io",
     branch: "main",
     tree: [],
     projects: {},
@@ -866,8 +866,8 @@
     const host = window.location.hostname;
     const pathname = window.location.pathname;
 
-    let detectedOwner = "escomz";
-    let detectedRepo = "escomz.github.io";
+    let detectedOwner = "abdallahmfg";
+    let detectedRepo = "abdallahmfg.github.io";
 
     if (host.endsWith(".github.io")) {
       detectedOwner = host.split(".")[0];
@@ -1188,10 +1188,14 @@
     dom.btnGithub.href = githubUrl;
 
     // Determinar si podemos mostrar ejecución
-    if (filePath.endsWith(".html")) {
+    if (filePath.endsWith(".html") || filePath.endsWith(".py")) {
       dom.btnLaunchPreview.classList.remove("hidden");
-      dom.btnOpenExternal.classList.remove("hidden");
-      dom.btnOpenExternal.href = externalPagesUrl;
+      if (filePath.endsWith(".html")) {
+        dom.btnOpenExternal.classList.remove("hidden");
+        dom.btnOpenExternal.href = externalPagesUrl;
+      } else {
+        dom.btnOpenExternal.classList.add("hidden");
+      }
       state.currentHtmlTarget = filePath;
     } else {
       var currentProjFiles = state.projects[state.activeProject] || [];
@@ -1223,7 +1227,7 @@
       newUrl.searchParams.set("f", filePath);
       window.history.replaceState({}, "", newUrl);
 
-      if (state.activeMode === "preview" && filePath.endsWith(".html")) {
+      if (state.activeMode === "preview" && (filePath.endsWith(".html") || filePath.endsWith(".py"))) {
         launchExecution(filePath);
       }
     } catch (err) {
@@ -1272,25 +1276,48 @@
 
   /* ── EJECUCIÓN INTERACTIVA EN IFRAME ── */
 
-  async function launchExecution(htmlPath) {
-    if (!htmlPath) {
-      htmlPath = state.currentHtmlTarget;
+  async function launchExecution(filePath) {
+    if (!filePath) {
+      filePath = state.currentHtmlTarget;
     }
-    if (!htmlPath) {
-      showToast("No hay un archivo HTML seleccionado para ejecutar");
+    if (!filePath) {
+      showToast("No hay un archivo seleccionado para ejecutar");
       return;
     }
 
-    state.currentHtmlTarget = htmlPath;
+    state.currentHtmlTarget = filePath;
     switchMode("preview");
-    
-    dom.previewTitle.textContent = "▶ Ejecutando: " + htmlPath;
-    dom.btnPreviewExternal.href = getGitHubPagesUrl(state.owner, state.repo, htmlPath);
-
+    dom.previewTitle.textContent = "▶ Ejecutando: " + filePath;
     clearConsole();
+
+    // Para Python/Flask, GitHub Pages no ejecuta Python realmente.
+    // Aquí simulamos la salida de una ruta sencilla leyendo el primer return de texto.
+    if (filePath.endsWith(".py")) {
+      dom.btnPreviewExternal.removeAttribute("href");
+      addConsoleLog("Simulando ejecución de Flask desde " + filePath + "...", "log");
+      try {
+        var rawPyUrl = "https://raw.githubusercontent.com/" + state.owner + "/" + state.repo + "/" + state.branch + "/" + filePath;
+        var pyRes = await fetch(rawPyUrl);
+        if (!pyRes.ok) throw new Error("No se pudo cargar el archivo Python (" + pyRes.status + ")");
+        var pythonCode = await pyRes.text();
+        var match = pythonCode.match(/return\s+["']([^"']+)["']/);
+        var salida = match ? match[1] : "Aplicación Flask ejecutada";
+        var htmlSimulado = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Flask Preview</title><style>body{font-family:Arial,sans-serif;padding:40px;background:#fff;color:#111;}</style></head><body>' + escapeHtml(salida) + '</body></html>';
+        dom.previewFrame.srcdoc = htmlSimulado;
+        addConsoleLog("Salida Flask: " + salida, "log");
+      } catch (err) {
+        dom.previewFrame.srcdoc = '<div style="font-family:Arial;padding:30px;color:#b00020;">' + escapeHtml(err.message) + '</div>';
+        addConsoleLog(err.message, "error");
+      }
+      return;
+    }
+
+    // Comportamiento original para HTML.
+    dom.btnPreviewExternal.href = getGitHubPagesUrl(state.owner, state.repo, filePath);
     addConsoleLog("Iniciando entorno de ejecución interactiva...", "log");
 
     try {
+      var htmlPath = filePath;
       var baseDir = htmlPath.includes("/") ? htmlPath.substring(0, htmlPath.lastIndexOf("/")) : "";
       var rawBase = "https://raw.githubusercontent.com/" + state.owner + "/" + state.repo + "/" + state.branch + "/";
       var rawHtmlUrl = rawBase + htmlPath;
